@@ -1,0 +1,42 @@
+name: Daily data refresh
+
+# Runs every day at 06:00 UTC, regenerates data.json + data.js, and commits any
+# change. The push to main triggers Vercel's automatic production deploy — so the
+# live site updates daily with no server and no Vercel-side cron needed.
+on:
+  schedule:
+    - cron: "0 6 * * *"   # daily 06:00 UTC
+  workflow_dispatch: {}    # allow manual "Run workflow" from the Actions tab
+
+permissions:
+  contents: write          # needed to commit the regenerated data back
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Regenerate dataset
+        run: node scripts/update-data.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "gpu-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if [ -n "$(git status --porcelain data.json data.js)" ]; then
+            git add data.json data.js
+            git commit -m "chore(data): daily refresh $(date -u +%Y-%m-%d)"
+            git push
+            echo "Committed daily refresh."
+          else
+            echo "No data changes today."
+          fi

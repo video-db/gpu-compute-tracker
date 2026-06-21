@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPU Compute Tracker — Cross-Cloud Availability & Pricing</title>
+<meta name="description" content="Track large-scale GPU machines across every major cloud, neocloud and regional data center. Specs, cross-region availability, on-demand/spot/committed pricing, and smart equivalent-machine recommendations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* VideoDB atomic design system tokens */
+    --neutral-darker:#050505; --neutral-dark:#0A0A0A; --charcoal:#161616; --charcoal-hover:#1F1F1F; --charcoal-darker:#1A1A1A;
+    --grey-1000:#0A0A0A; --grey-900:#161616; --grey-700:#2A2A2A; --grey-400:#B4B4B6; --grey-200:#E8E8EA; --white:#FFFFFF;
+    --orange-400:#FF7E32; --orange-500:#F24E1E; --orange-600:#D14016; --orange-700:#A23310; --orange-rgb:242,78,30;
+    --border:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.12);
+    --text:#E8E8EA; --text-sub:#B4B4B6; --text-dim:#6E6E72;
+    --r-subtle:4px; --r-card:12px; --r-surface-md:16px; --r-control:9999px;
+    --sans:'Geist',system-ui,-apple-system,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+    --green:#3FB984; --amber:#E5A23C; --red:#E5564E;
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--neutral-dark);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  a{color:inherit;text-decoration:none}
+  main ::selection{background:rgba(var(--orange-rgb),.28)}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 24px 96px}
+
+  /* eyebrow / mono chrome */
+  .eyebrow{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim)}
+  .mono{font-family:var(--mono)}
+
+  header.top{padding:40px 0 22px;border-bottom:1px solid var(--border);margin-bottom:32px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:40px;height:40px;border-radius:var(--r-subtle);background:var(--orange-500);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:20px;color:#fff;flex:none}
+  h1{font-size:24px;margin:0;letter-spacing:-.02em;font-weight:500}
+  .tag{color:var(--text-sub);font-size:14px;margin-top:5px;max-width:760px}
+  .live{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-left:auto;letter-spacing:.04em}
+  .live .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(63,185,132,.18)}
+  .brand-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .stat-strip{display:flex;gap:32px;flex-wrap:wrap;margin-top:22px}
+  .stat-strip div{font-size:11px;color:var(--text-dim);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase}
+  .stat-strip b{color:var(--text);font-size:18px;font-family:var(--sans);font-weight:500;display:block;margin-top:4px;letter-spacing:-.01em;text-transform:none}
+
+  .searchbar{position:relative;margin:6px 0 0}
+  #q{width:100%;padding:18px 20px 18px 52px;font-size:16px;background:var(--charcoal);border:1px solid var(--border-strong);border-radius:var(--r-card);color:var(--text);outline:none;font-family:var(--mono);transition:border-color .18s var(--ease),background .18s var(--ease)}
+  #q::placeholder{color:var(--text-dim)}
+  #q:focus{border-color:var(--orange-500);background:var(--charcoal-hover)}
+  .searchbar svg{position:absolute;left:20px;top:19px;width:19px;height:19px;stroke:var(--text-dim)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0;align-items:center}
+  .chips .lbl{color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+  .chip{background:transparent;border:1px solid var(--border-strong);color:var(--text-sub);padding:7px 13px;border-radius:var(--r-control);font-size:12.5px;cursor:pointer;font-family:var(--mono);transition:border-color .15s var(--ease),color .15s var(--ease)}
+  .chip:hover{border-color:var(--orange-500);color:var(--text)}
+
+  .results{margin-top:30px}
+  /* spec card */
+  .spec-card{background:var(--charcoal);border:1px solid var(--border);border-radius:var(--r-surface-md);padding:26px 28px;margin-bottom:28px}
+  .sc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .sc-title{font-size:26px;font-weight:500;letter-spacing:-.02em}
+  .sc-title .x{color:var(--text-dim);font-weight:400}
+  .sc-sub{color:var(--text-sub);font-size:13.5px;margin-top:6px;max-width:680px}
+  .sc-sub b{color:var(--text);font-weight:500}
+  .badge{display:inline-flex;align-items:center;padding:6px 12px;border-radius:var(--r-control);font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.06em;border:1px solid var(--border-strong);color:var(--orange-400)}
+  .specgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden;margin-top:22px}
+  .specgrid div{background:var(--neutral-dark);padding:15px 16px}
+  .specgrid span{display:block;color:var(--text-dim);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+  .specgrid b{font-size:16px;font-family:var(--sans);font-weight:500}
+  .specgrid b.sm{font-size:12.5px;font-family:var(--mono);font-weight:500}
+
+  .section-h{display:flex;align-items:baseline;gap:14px;margin:38px 0 6px}
+  .section-h h2{font-size:13px;margin:0;font-weight:500;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text)}
+  .section-h .count{color:var(--text-dim);font-size:11px;font-family:var(--mono);letter-spacing:.04em}
+  .lead{color:var(--text-sub);font-size:14px;margin:10px 0 16px;line-height:1.55;max-width:760px}
+  .lead b{color:var(--text);font-weight:500}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px;align-items:center}
+  .toolbar .lbl{color:var(--text-dim);font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-right:4px}
+  .filt{background:transparent;border:1px solid var(--border-strong);color:var(--text-sub);padding:7px 14px;border-radius:var(--r-control);font-size:12.5px;cursor:pointer;font-family:var(--mono);transition:all .15s var(--ease)}
+  .filt:hover{border-color:var(--border-strong);color:var(--text)}
+  .filt.on{background:var(--orange-500);border-color:var(--orange-500);color:#fff}
+
+  .tblwrap{border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:var(--neutral-darker);text-align:left;padding:13px 14px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border)}
+  thead th:hover{color:var(--text)}
+  thead th .arr{opacity:.6;font-size:9px}
+  tbody td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:rgba(255,255,255,.02)}
+  .prov{display:flex;align-items:center;gap:10px}
+  .pdot{width:8px;height:8px;border-radius:50%;flex:none}
+  .pname{font-weight:500}
+  .ptype{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
+  .inst{font-family:var(--mono);font-size:12.5px;color:var(--text)}
+  .subnote{color:var(--text-dim);font-size:11px;margin-top:4px;max-width:240px;line-height:1.45}
+  .cfg{font-family:var(--mono);font-size:12px}
+  .dim{color:var(--text-dim)}
+  .price{font-family:var(--mono);font-weight:600;font-size:13.5px}
+  .pergpu{font-family:var(--mono);color:var(--text-sub);font-size:12px}
+  .spot{font-family:var(--mono);color:var(--green);font-size:12.5px}
+  .na{color:var(--text-dim)}
+  .est{color:var(--amber);font-size:9px;font-family:var(--mono);vertical-align:super;margin-left:2px}
+  .regions{display:flex;gap:5px;flex-wrap:wrap;max-width:270px}
+  .rg{font-family:var(--mono);font-size:10px;padding:3px 7px;border-radius:var(--r-subtle);border:1px solid var(--border-strong);white-space:nowrap;color:var(--text-sub)}
+  .rg.ga{color:#7fd9b4;border-color:rgba(63,185,132,.4)}
+  .rg.limited{color:#e9bd7e;border-color:rgba(229,162,60,.4)}
+  .rg.waitlist{color:#e89a94;border-color:rgba(229,86,78,.4)}
+  .rg.blocks{color:#e8a07e;border-color:rgba(242,78,30,.4)}
+  .statpill{font-family:var(--mono);font-size:10.5px;font-weight:500;padding:4px 10px;border-radius:var(--r-control);white-space:nowrap;border:1px solid var(--border-strong)}
+  .s-ga{color:#7fd9b4;border-color:rgba(63,185,132,.4)}
+  .s-limited{color:#e9bd7e;border-color:rgba(229,162,60,.4)}
+  .s-waitlist{color:#e89a94;border-color:rgba(229,86,78,.4)}
+  .s-blocks{color:var(--orange-400);border-color:rgba(242,78,30,.4)}
+  td.best{position:relative}
+  td.best::after{content:"LOW";position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:8px;background:var(--orange-500);color:#fff;padding:2px 6px;border-radius:var(--r-subtle);font-weight:600;letter-spacing:.08em}
+
+  .recos{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
+  .reco{background:var(--charcoal);border:1px solid var(--border);border-radius:var(--r-card);padding:18px 19px;transition:border-color .15s var(--ease)}
+  .reco:hover{border-color:var(--border-strong)}
+  .reco-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .reco-gpu{font-size:17px;font-weight:500;letter-spacing:-.01em}
+  .reco-meta{color:var(--text-dim);font-size:11px;margin-top:3px;font-family:var(--mono)}
+  .reco-match{font-family:var(--mono);font-size:11px;padding:4px 9px;border-radius:var(--r-control);border:1px solid rgba(242,78,30,.4);color:var(--orange-400);white-space:nowrap}
+  .bar{height:3px;border-radius:2px;background:var(--grey-700);margin-top:11px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--orange-500)}
+  .reco-why{color:var(--text-sub);font-size:13px;line-height:1.5;margin:13px 0 14px}
+  .reco-why b{color:var(--text);font-weight:500}
+  .reco-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:13px}
+  .reco-foot .pp{font-family:var(--mono);font-size:11px;color:var(--text-dim)}
+  .reco-foot .pp b{color:var(--text);font-size:14.5px;font-weight:600}
+  .reco-cta{font-family:var(--mono);font-size:12px;cursor:pointer;color:var(--orange-400)}
+  .reco-cta:hover{color:var(--orange-400);text-decoration:underline}
+
+  .empty{text-align:center;padding:80px 20px;color:var(--text-sub)}
+  .empty .eyebrow{margin-bottom:16px}
+  .empty h3{color:var(--text);font-size:22px;margin:0 0 12px;font-weight:500;letter-spacing:-.02em}
+  .empty p{max-width:580px;margin:0 auto;line-height:1.6;font-size:14.5px}
+  .empty p b{color:var(--text);font-weight:500}
+  .note{background:var(--charcoal);border:1px solid var(--border);border-left:2px solid var(--orange-500);border-radius:var(--r-card);padding:15px 18px;font-size:13px;color:var(--text-sub);margin-top:30px;line-height:1.6}
+  .note b{color:var(--text);font-weight:500}
+  footer{margin-top:48px;padding-top:26px;border-top:1px solid var(--border);color:var(--text-dim);font-size:12.5px;line-height:1.75;font-family:var(--mono)}
+  footer b{color:var(--text-sub);font-weight:500}
+  .kbd{font-family:var(--mono);background:var(--charcoal);border:1px solid var(--border-strong);border-radius:var(--r-subtle);padding:2px 7px;font-size:11px;color:var(--text-sub)}
+  @media(max-width:640px){.wrap{padding:0 18px 64px}.specgrid{grid-template-columns:repeat(2,1fr)}.regions{max-width:150px}.stat-strip{gap:22px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div class="brand-row">
+      <div class="brand">
+        <div class="logo">⛁</div>
+        <div>
+          <h1>GPU Compute Tracker</h1>
+        </div>
+      </div>
+      <span class="live"><span class="dot"></span><span id="liveLabel">live</span></span>
+    </div>
+    <div class="tag">Cross-cloud availability, pricing & intelligent matching for large-scale GPU machines — hyperscalers, neoclouds & regional data centers. <span class="mono" style="color:var(--text-dim)">Auto-refreshed daily.</span></div>
+    <div class="stat-strip" id="statStrip"></div>
+  </header>
+
+  <div class="searchbar">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+    <input id="q" placeholder="instance (p5.48xlarge, ND H100 v5) or spec (8x H200, A100 80GB, B200, MI300X)…" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div class="results" id="results"></div>
+
+  <div class="note">
+    <b>How this works.</b> Enter an AWS / Azure / GCP / OCI instance name <i>or</i> a raw spec (GPU model, count, VRAM). The tracker extracts the underlying GPU, finds every matching machine across providers and regions, shows on-demand / spot / committed pricing normalized to $/GPU/hr, and recommends the closest-matching alternatives ranked by performance similarity, availability and price. Prices are <b>indicative public list & street rates</b> — verify with the provider before committing. Items marked <span class="est">est</span> are estimated; spot / marketplace rates move hourly.
+  </div>
+
+  <footer>
+    <div><b>COVERAGE</b> — AWS · GCP · Azure · Oracle OCI · CoreWeave · Lambda · Crusoe · Nebius · RunPod · Vast.ai · Together · Fluidstack · Scaleway · OVHcloud · Alibaba · Tencent · E2E · Yotta</div>
+    <div style="margin-top:8px"><b>DATA</b> — <span id="footUpdated">curated from public provider pricing</span>. Press <span class="kbd">/</span> to search.</div>
+  </footer>
+</main>
+
+<script src="data.js"></script>
+<script>
+/* ============================================================
+   GPU Compute Tracker — app logic
+   Data is supplied by data.js -> window.GPU_DATA (regenerated daily).
+   ============================================================ */
+const DATA = window.GPU_DATA || {gpus:{},providers:{},instances:[],meta:{}};
+const GPUS = DATA.gpus, PROV = DATA.providers, INSTANCES = DATA.instances, META = DATA.meta||{};
+
+/* ---- Parser ---- */
+const GPU_KEYS = [
+  ["gb200",["gb200","grace blackwell","nvl72"]],
+  ["b200",["b200","blackwell"]],
+  ["gh200",["gh200","grace hopper"]],
+  ["h200",["h200"]],
+  ["h100pcie",["h100 pcie","h100 nvl","h100nvl","ncads"]],
+  ["h100",["h100","hopper"]],
+  ["a100_80",["a100 80","a100-80","a10080","a100 80gb"]],
+  ["a100_40",["a100 40","a100-40","a10040","a100 40gb"]],
+  ["a100_80",["a100"]],
+  ["mi300x",["mi300x","mi300","instinct"]],
+  ["l40s",["l40s","l40"]],
+  ["l4",["l4"]],
+  ["a10",["a10g","a10"]],
+  ["v100",["v100","volta"]],
+  ["t4",["t4","tesla t4"]],
+  ["rtx4090",["4090","rtx4090","rtx 4090"]],
+];
+function parseQuery(qraw){
+  const q=(qraw||"").trim().toLowerCase(); if(!q) return null;
+  let count=null; const cm=q.match(/(\d+)\s*x\b/); if(cm) count=parseInt(cm[1]);
+  const vm=q.match(/(\d+)\s*gb/); const vram=vm?parseInt(vm[1]):null;
+  const noSpace=q.replace(/\s+/g,"");
+  let inst=null;
+  for(const it of INSTANCES){
+    const key=it.name.toLowerCase().split("(")[0].replace(/\s+/g,"");
+    if(noSpace && key.includes(noSpace.slice(0,Math.max(5,noSpace.length))) && noSpace.length>=5){ inst=it; break; }
+  }
+  if(!inst){
+    for(const it of INSTANCES){
+      const first=it.name.toLowerCase().split(" ")[0];
+      if(first.length>=5 && (q.includes(first)||noSpace.includes(first.replace(/\s+/g,"")))){ inst=it; break; }
+    }
+  }
+  let gpu=null;
+  for(const [g,keys] of GPU_KEYS){ for(const k of keys){ if(q.includes(k)){ gpu=g; break; } } if(gpu) break; }
+  if(gpu==="a100_80"&&vram===40) gpu="a100_40";
+  if(gpu==="h100"&&vram===94) gpu="h100pcie";
+  if(inst&&!gpu) gpu=inst.gpu;
+  if(inst&&!count) count=inst.n;
+  return {gpu,count,vram,inst,raw:qraw.trim()};
+}
+
+/* ---- Similarity (directional: a=target, b=candidate) ---- */
+function similarity(aId,bId){
+  if(aId===bId) return 1;
+  const a=GPUS[aId], b=GPUS[bId];
+  const perfR=Math.min(a.perf,b.perf)/Math.max(a.perf,b.perf);
+  const vramR=b.vram>=a.vram?1:b.vram/a.vram;
+  const bwR=b.bw>=a.bw?1:b.bw/a.bw;
+  const tierM=a.tier===b.tier?1:0;
+  const archM=a.arch===b.arch?1:0;
+  return 0.46*perfR+0.24*vramR+0.10*bwR+0.12*tierM+0.08*archM;
+}
+function perGpu(i){ return i.od!=null ? i.od/i.n : null; }
+function cheapestInstanceFor(gpuId,onlyAvailable=true){
+  const list=INSTANCES.filter(i=>i.gpu===gpuId&&perGpu(i)!=null)
+    .filter(i=>!onlyAvailable||i.r.some(x=>x[1]==="ga"||x[1]==="limited"));
+  list.sort((x,y)=>perGpu(x)-perGpu(y)); return list[0]||null;
+}
+function availScore(i){const w={ga:3,limited:2,blocks:1,waitlist:0};return i.r.reduce((s,x)=>s+(w[x[1]]||0),0);}
+
+/* ---- Render ---- */
+const $=s=>document.querySelector(s);
+let sortKey="pergpu",sortDir=1,provFilter="all",availOnly=false,curMatches=[];
+function fmt(n){return n==null?null:("$"+n.toFixed(2));}
+function statusPill(s){const m={ga:["s-ga","Available"],limited:["s-limited","Limited"],waitlist:["s-waitlist","Waitlist"],blocks:["s-blocks","Reserved"]};const x=m[s]||["s-limited",s];return `<span class="statpill ${x[0]}">${x[1]}</span>`;}
+function bestStatus(i){for(const o of ["ga","limited","blocks","waitlist"]){if(i.r.some(r=>r[1]===o))return o;}return "waitlist";}
+function gpuShort(id){return GPUS[id].name.replace("NVIDIA ","").replace("AMD ","");}
+
+function renderStats(){
+  const provs=Object.keys(PROV).length;
+  const regions=new Set(); INSTANCES.forEach(i=>i.r.forEach(r=>regions.add(i.provider+r[0])));
+  $("#statStrip").innerHTML=`
+    <div>Providers<b>${provs}</b></div>
+    <div>Machine SKUs<b>${INSTANCES.length}</b></div>
+    <div>GPU models<b>${Object.keys(GPUS).length}</b></div>
+    <div>Region offerings<b>${regions.size}</b></div>
+    <div>Last refreshed<b>${META.updated||"—"}</b></div>`;
+  if(META.updated){ $("#footUpdated").textContent="auto-refreshed "+META.updated+" · "+(META.source||""); $("#liveLabel").textContent="updated "+META.updated; }
+}
+function renderChips(){
+  const ex=["p5.48xlarge","8x H200","ND H100 v5","B200","A100 80GB","MI300X","BM.GPU.H100.8","a3-megagpu-8g","L40S","GB200"];
+  $("#chips").innerHTML=`<span class="lbl">Try</span>`+ex.map(e=>`<span class="chip" data-q="${e}">${e}</span>`).join("");
+  document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{$("#q").value=c.dataset.q;run();});
+}
+function sortMatches(list){
+  const get={pergpu:i=>perGpu(i)??1e9,od:i=>i.od??1e9,spot:i=>i.spot??1e9,gpus:i=>i.n,
+    vram:i=>GPUS[i.gpu].vram*i.n,avail:i=>-availScore(i),prov:i=>PROV[i.provider].n};
+  const f=get[sortKey]||get.pergpu;
+  return [...list].sort((a,b)=>{const r=(f(a)>f(b)?1:f(a)<f(b)?-1:0);return r*sortDir;});
+}
+const RTITLE={ga:"Generally available",limited:"Limited capacity / contact sales",waitlist:"Waitlist / preview",blocks:"Reserved / capacity blocks only"};
+function renderTable(){
+  let list=curMatches.filter(i=>provFilter==="all"||PROV[i.provider].t===provFilter);
+  if(availOnly) list=list.filter(i=>i.r.some(r=>r[1]==="ga"||r[1]==="limited"));
+  list=sortMatches(list);
+  const minPG=Math.min(...list.map(i=>perGpu(i)??1e9));
+  const th=(k,l)=>`<th data-k="${k}">${l} <span class="arr">${sortKey===k?(sortDir>0?"▲":"▼"):"↕"}</span></th>`;
+  let rows=list.map(i=>{
+    const pg=perGpu(i); const isBest=pg!=null&&Math.abs(pg-minPG)<1e-6;
+    const regs=i.r.map(r=>`<span class="rg ${r[1]}" title="${RTITLE[r[1]]}">${r[0]}</span>`).join("");
+    return `<tr>
+      <td><div class="prov"><span class="pdot" style="background:${PROV[i.provider].c}"></span><div><div class="pname">${PROV[i.provider].n}</div><div class="ptype">${PROV[i.provider].t}</div></div></div></td>
+      <td><span class="inst">${i.name}</span>${i.note?`<div class="subnote">${i.note}</div>`:""}</td>
+      <td class="cfg">${i.n}× ${gpuShort(i.gpu)}</td>
+      <td class="pergpu">${GPUS[i.gpu].vram*i.n} GB<br><span class="dim">${GPUS[i.gpu].vram}/GPU</span></td>
+      <td class="pergpu">${i.vcpu} / ${i.ram}GB</td>
+      <td class="${isBest?'best price':'price'}">${i.od!=null?fmt(i.od):'<span class="na">—</span>'}${i.est?'<span class="est">est</span>':''}</td>
+      <td class="pergpu">${pg!=null?fmt(pg):'—'}</td>
+      <td class="spot">${i.spot!=null?fmt(i.spot):'<span class="na">—</span>'}</td>
+      <td class="pergpu">${i.res1!=null?fmt(i.res1):'<span class="na">—</span>'}</td>
+      <td>${statusPill(bestStatus(i))}</td>
+      <td><div class="regions">${regs}</div></td>
+    </tr>`;
+  }).join("");
+  if(!list.length) rows=`<tr><td colspan="11" style="text-align:center;color:var(--text-sub);padding:34px">No machines match this filter.</td></tr>`;
+  return `<div class="tblwrap"><table>
+    <thead><tr>${th("prov","Provider")}<th>Machine</th>${th("gpus","GPU config")}${th("vram","Total VRAM")}
+      <th>vCPU / RAM</th>${th("od","On-demand /hr")}${th("pergpu","$/GPU/hr")}${th("spot","Spot /hr")}
+      <th>1yr commit</th>${th("avail","Status")}<th>Regions</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+function buildWhy(tg,o,sim){
+  const parts=[]; if(o.tier===tg.tier) parts.push(`same class (${o.tier.replace('-',' ')})`);
+  const pr=o.perf/tg.perf;
+  if(pr>=1.3) parts.push(`~${pr.toFixed(1)}× the compute`);
+  else if(pr<=0.77) parts.push(`~${(1/pr).toFixed(1)}× less compute but cheaper`);
+  else parts.push(`comparable compute`);
+  if(o.vram>tg.vram*1.2) parts.push(`larger ${o.vram}GB VRAM (fits bigger models)`);
+  else if(o.vram<tg.vram*0.8) parts.push(`smaller ${o.vram}GB VRAM`);
+  if(o.arch===tg.arch) parts.push(`same ${o.arch} architecture`);
+  const lead=sim>0.92?"Near drop-in replacement":sim>0.8?"Strong alternative":sim>0.6?"Reasonable substitute":"Different tier — only if requirements flex";
+  return `<b>${lead}.</b> ${parts.join(", ")}.`;
+}
+function renderRecos(targetGpu){
+  const others=Object.keys(GPUS).filter(g=>g!==targetGpu)
+    .map(g=>({g,sim:similarity(targetGpu,g),inst:cheapestInstanceFor(g)}))
+    .filter(x=>x.inst).sort((a,b)=>b.sim-a.sim||(perGpu(a.inst)-perGpu(b.inst))).slice(0,6);
+  const tg=GPUS[targetGpu];
+  return others.map(({g,sim,inst})=>{
+    const o=GPUS[g],pg=perGpu(inst),pct=Math.min(99,Math.round(sim*100));
+    return `<div class="reco">
+      <div class="reco-top"><div><div class="reco-gpu">${gpuShort(g)}</div>
+        <div class="reco-meta">${o.arch} · ${o.vram}GB ${o.mem} · ~${o.perf} TF</div></div>
+        <div class="reco-match">${pct}% match</div></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="reco-why">${buildWhy(tg,o,sim)}</div>
+      <div class="reco-foot"><div class="pp">cheapest available<br><b>${fmt(pg)}/GPU/hr</b> · ${PROV[inst.provider].n}</div>
+        <span class="reco-cta" data-rq="${gpuShort(g).split(' ')[0]}">view →</span></div>
+    </div>`;
+  }).join("");
+}
+function run(){
+  const q=$("#q").value; const p=parseQuery(q); const R=$("#results");
+  if(!p||!p.gpu){
+    if(!q.trim()){ R.innerHTML=welcome(); return; }
+    R.innerHTML=`<div class="empty"><div class="eyebrow">No match</div><h3>Couldn't identify a GPU from "${q}"</h3>
+      <p>Try an instance name (p5.48xlarge, ND H100 v5, BM.GPU.H100.8) or a spec like <b>8x H200</b>, <b>A100 80GB</b>, <b>B200</b>, <b>MI300X</b>.</p></div>`;
+    return;
+  }
+  const g=GPUS[p.gpu];
+  curMatches=INSTANCES.filter(i=>i.gpu===p.gpu);
+  const avail=curMatches.filter(i=>i.r.some(r=>r[1]==="ga"||r[1]==="limited"));
+  const pgs=curMatches.map(perGpu).filter(x=>x!=null); const minPG=pgs.length?Math.min(...pgs):null;
+  const spots=curMatches.map(i=>i.spot).filter(x=>x!=null); const minSpot=spots.length?Math.min(...spots):null;
+  const cheapInst=cheapestInstanceFor(p.gpu);
+  const gaCount=curMatches.filter(i=>i.r.some(r=>r[1]==="ga")).length;
+
+  const specCard=`<div class="spec-card">
+    <div class="sc-head">
+      <div><div class="eyebrow" style="margin-bottom:10px">${p.inst?"Detected instance":"Detected GPU"}</div>
+        <div class="sc-title">${g.name}${p.count&&p.count>1?` <span class="x">× ${p.count}</span>`:""}</div>
+        <div class="sc-sub">${p.inst?`Matched <b class="mono">${p.inst.name}</b> → `:""}${g.note}</div></div>
+      <span class="badge">${g.arch} · ${g.year}</span>
+    </div>
+    <div class="specgrid">
+      <div><span>VRAM / GPU</span><b>${g.vram} GB</b></div>
+      <div><span>Memory</span><b>${g.mem}</b></div>
+      <div><span>Bandwidth</span><b>${(g.bw/1000).toFixed(1)} TB/s</b></div>
+      <div><span>BF16 ≈</span><b>~${g.perf} TF</b></div>
+      <div><span>Interconnect</span><b class="sm">${g.nvlink}</b></div>
+      <div><span>Class</span><b class="sm">${g.tier.replace('-',' ')}</b></div>
+    </div>
+    <div class="stat-strip" style="margin-top:22px">
+      <div>Providers<b>${new Set(curMatches.map(i=>i.provider)).size}</b></div>
+      <div>SKUs found<b>${curMatches.length}</b></div>
+      <div>Generally available<b>${gaCount}</b></div>
+      <div>Cheapest on-demand<b>${minPG!=null?fmt(minPG)+"/GPU":"—"}</b></div>
+      <div>Cheapest spot/market<b>${minSpot!=null?fmt(minSpot)+"/hr":"—"}</b></div>
+      <div>Best value<b>${cheapInst?PROV[cheapInst.provider].n:"—"}</b></div>
+    </div></div>`;
+
+  let availabilityBlock;
+  if(curMatches.length){
+    const regOff=new Set(curMatches.flatMap(i=>i.r.map(r=>i.provider+r[0]))).size;
+    availabilityBlock=`
+      <div class="section-h"><h2>Availability across clouds & regions</h2><span class="count">${curMatches.length} machines · ${regOff} region offerings</span></div>
+      <div class="toolbar"><span class="lbl">Filter</span>
+        <span class="filt ${provFilter==='all'?'on':''}" data-pf="all">All</span>
+        <span class="filt ${provFilter==='hyperscaler'?'on':''}" data-pf="hyperscaler">Hyperscalers</span>
+        <span class="filt ${provFilter==='neocloud'?'on':''}" data-pf="neocloud">Neoclouds</span>
+        <span class="filt ${provFilter==='regional'?'on':''}" data-pf="regional">Regional</span>
+        <span class="filt ${availOnly?'on':''}" data-avail="1" style="margin-left:8px">Available only</span></div>
+      <div id="tableMount">${renderTable()}</div>`;
+  } else {
+    availabilityBlock=`<div class="note" style="border-left-color:var(--red)"><b>No tracked machine currently exposes ${g.name}.</b> This GPU may be unreleased, allocation-only, or not yet indexed. See closest available alternatives below.</div>`;
+  }
+  const scarce=avail.length<=2||gaCount===0;
+  const recoLead=curMatches.length===0
+    ? `This exact GPU isn't provisionable right now — here are the closest machines you <b>can</b> secure today`
+    : scarce ? `${g.name} capacity is tight (mostly limited / waitlist). Strong fallbacks ranked by performance match, availability and price`
+    : `Equivalent & adjacent options — for price arbitrage, multi-cloud redundancy, or when your preferred region is full`;
+  const recosBlock=`<div class="section-h"><h2>Recommended alternatives</h2></div>
+    <div class="lead">${recoLead}.</div><div class="recos">${renderRecos(p.gpu)}</div>`;
+
+  R.innerHTML=specCard+availabilityBlock+recosBlock;
+  wireResultEvents();
+}
+function wireResultEvents(){
+  document.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k;sortDir=1;}
+    $("#tableMount").innerHTML=renderTable(); wireResultEvents();
+  });
+  document.querySelectorAll(".filt[data-pf]").forEach(f=>f.onclick=()=>{provFilter=f.dataset.pf;run();});
+  document.querySelectorAll(".filt[data-avail]").forEach(f=>f.onclick=()=>{availOnly=!availOnly;run();});
+  document.querySelectorAll(".reco-cta").forEach(c=>c.onclick=()=>{$("#q").value=c.dataset.rq;provFilter="all";availOnly=false;run();window.scrollTo({top:0,behavior:"smooth"});});
+}
+function welcome(){
+  return `<div class="empty"><div class="eyebrow">Start here</div>
+    <h3>Track GPU compute across every major cloud</h3>
+    <p>Enter any GPU machine above — an AWS / Azure / GCP / OCI instance name, a neocloud SKU, or a raw spec like <b>"8x H100"</b> or <b>"A100 80GB"</b>. You'll get the full cross-cloud availability matrix, normalized $/GPU/hr pricing across on-demand, spot and committed tiers, and intelligent recommendations for equivalent machines when your first choice is scarce.</p></div>`;
+}
+/* init */
+if(!INSTANCES.length){ $("#results").innerHTML=`<div class="empty"><h3>Data failed to load</h3><p>data.js could not be read. If opening locally, serve the folder over http (e.g. <span class="mono">npx serve</span>) rather than file://.</p></div>`; }
+else { renderStats(); renderChips(); $("#results").innerHTML=welcome();
+  $("#q").addEventListener("input",()=>{provFilter="all";availOnly=false;run();});
+  document.addEventListener("keydown",e=>{if(e.key==="/"&&document.activeElement!==$("#q")){e.preventDefault();$("#q").focus();}});
+}
+</script>
+</body>
+</html>

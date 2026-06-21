@@ -1,0 +1,12 @@
+{
+  "name": "gpu-compute-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-cloud GPU machine availability, pricing & smart-matching tracker.",
+  "type": "module",
+  "scripts": {
+    "update": "node scripts/update-data.mjs",
+    "dev": "npx --yes serve ."
+  },
+  "engines": { "node": ">=20" }
+}
