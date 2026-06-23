@@ -20,8 +20,7 @@ data.json    – the same dataset as raw JSON, for API/data consumers.
 scripts/
   update-data.mjs  – regenerates data.json + data.js (timestamp + live fetchers).
 .github/workflows/
-  update-data.yml  – daily cron that runs the script, commits changes, deploys.
-  deploy.yml       – manual/push production deploy through Vercel CLI.
+  update-data.yml  – daily cron that runs the script and commits any change.
 vercel.json  – clean URLs + no-cache headers on the data files.
 ```
 
@@ -34,7 +33,7 @@ The site is fully static, yet refreshes every day. The trick is to do the refres
 1. **GitHub Actions** runs `scripts/update-data.mjs` on a daily cron (`0 6 * * *`).
 2. The script refreshes pricing, re-stamps `meta.updated`, validates the dataset, and rewrites `data.json` + `data.js`.
 3. If anything changed, it commits back to `main`.
-4. The same workflow runs the Vercel CLI production deploy. The live site is updated — with no server running, ever.
+4. Vercel's Git integration deploys that commit. The live site is updated — with no server running, ever.
 
 You can also trigger it manually from the repo's **Actions → Daily data refresh → Run workflow**.
 
@@ -44,7 +43,7 @@ Short answer: **yes, and this repo uses the cleanest version of it.** Your optio
 
 | Approach | Backend? | Notes |
 |---|---|---|
-| **GitHub Actions cron → commit → Vercel CLI deploy** (this repo) | None | Recommended. Data refresh runs in CI; Vercel just serves static files. Free, robust, full git history of every price change. |
+| **GitHub Actions cron → commit → Vercel Git deploy** (this repo) | None | Recommended. Data refresh runs in CI; Vercel just serves static files. Free, robust, full git history of every price change. |
 | Vercel Cron Jobs → Serverless/Edge Function | A function | Vercel *can* run scheduled functions, but that *is* a (serverless) backend, and Hobby-plan cron is limited to once/day. Use if you want the refresh to live inside Vercel. |
 | Next.js ISR (`revalidate`) | Framework runtime | Requires migrating to Next.js. Overkill for a single static page. |
 | Client-side fetch on page load | None | The browser could fetch a live JSON each visit — but then every visitor pays the latency and you need a CORS-enabled live feed. Build-time refresh is better. |
@@ -72,4 +71,4 @@ Opening `index.html` directly via `file://` also works, because `data.js` is loa
 2. In Vercel: **Add New → Project → Import** the repo. Framework preset: **Other**. Root: repo root. No build command, output = repo root.
 3. Deploy. Every future push (including the daily bot commit) redeploys automatically.
 
-For the GitHub Actions deploy path, set `VERCEL_OAUTH_TOKEN`, `VERCEL_REFRESH_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` as repository Actions secrets.
+For the daily commit to redeploy, make sure the repo's default branch is connected to the Vercel project's production branch.

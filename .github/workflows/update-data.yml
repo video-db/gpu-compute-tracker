@@ -1,7 +1,7 @@
 name: Daily data refresh
 
-# Runs every day at 06:00 UTC, regenerates data.json + data.js, commits any
-# change, then deploys the refreshed static site to Vercel production.
+# Runs every day at 06:00 UTC, regenerates data.json + data.js, and commits any
+# change. The Vercel Git integration deploys that commit to production.
 on:
   schedule:
     - cron: "0 6 * * *"   # daily 06:00 UTC
@@ -17,9 +17,6 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +28,6 @@ jobs:
         run: node scripts/update-data.mjs
 
       - name: Commit if changed
-        id: commit
         run: |
           git config user.name  "gpu-tracker-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -39,42 +35,7 @@ jobs:
             git add data.json data.js
             git commit -m "chore(data): daily refresh $(date -u +%Y-%m-%d)"
             git push
-            echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Committed daily refresh."
           else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No data changes today."
           fi
-
-      - name: Install Vercel CLI
-        if: steps.commit.outputs.changed == 'true'
-        run: npm i -g vercel@latest
-
-      - name: Configure Vercel auth
-        if: steps.commit.outputs.changed == 'true'
-        env:
-          VERCEL_OAUTH_TOKEN: ${{ secrets.VERCEL_OAUTH_TOKEN }}
-          VERCEL_REFRESH_TOKEN: ${{ secrets.VERCEL_REFRESH_TOKEN }}
-        run: |
-          VERCEL_GLOBAL_CONFIG="$RUNNER_TEMP/vercel-auth"
-          mkdir -p "$VERCEL_GLOBAL_CONFIG"
-          node <<'NODE'
-          const fs = require('fs');
-          const dir = `${process.env.RUNNER_TEMP}/vercel-auth`;
-          const token = process.env.VERCEL_OAUTH_TOKEN;
-          const refreshToken = process.env.VERCEL_REFRESH_TOKEN;
-          if (!token || !refreshToken) throw new Error('Missing VERCEL_OAUTH_TOKEN or VERCEL_REFRESH_TOKEN secret');
-          fs.writeFileSync(`${dir}/auth.json`, JSON.stringify({ token, expiresAt: 0, refreshToken }, null, 2));
-          NODE
-
-      - name: Pull Vercel project settings
-        if: steps.commit.outputs.changed == 'true'
-        run: vercel pull --yes --environment=production --global-config "$RUNNER_TEMP/vercel-auth"
-
-      - name: Build
-        if: steps.commit.outputs.changed == 'true'
-        run: vercel build --prod --global-config "$RUNNER_TEMP/vercel-auth"
-
-      - name: Deploy to Vercel production
-        if: steps.commit.outputs.changed == 'true'
-        run: vercel deploy --prebuilt --prod --global-config "$RUNNER_TEMP/vercel-auth"
