@@ -201,7 +201,7 @@
         </button>
       </div>
     </div>
-    <div class="tag">Cross-cloud availability, pricing & intelligent matching for large-scale GPU machines — hyperscalers, neoclouds & regional data centers. <span class="mono" style="color:var(--text-dim)">Auto-refreshed daily.</span></div>
+    <div class="tag">Cross-cloud availability, pricing & intelligent matching for large-scale GPU machines — hyperscalers, neoclouds & regional data centers. <span class="mono" style="color:var(--text-dim);display:block;margin-top:7px">Auto-refreshed daily.</span></div>
     <div class="stat-strip" id="statStrip"></div>
   </header>
 
@@ -214,7 +214,7 @@
   <div class="results" id="results"></div>
 
   <div class="note">
-    <b>How this works.</b> Enter an AWS / Azure / GCP / OCI instance name <i>or</i> a raw spec (GPU model, count, VRAM). The tracker extracts the underlying GPU, finds every matching machine across providers and regions, shows on-demand / spot / committed pricing normalized to $/GPU/hr, and recommends the closest-matching alternatives ranked by performance similarity, availability and price. Prices are <b>indicative public list & street rates</b> — verify with the provider before committing. Items marked <span class="est">est</span> are estimated; spot / marketplace rates move hourly.
+    <b>Prices are indicative public list & street rates</b> — verify with the provider before committing. Normalized to $/GPU/hr; items marked <span class="est">est</span> are estimated, and spot / marketplace rates move hourly.
   </div>
 
   <footer>
@@ -464,7 +464,7 @@ function wireResultEvents(){
 function welcome(){
   return `<div class="empty"><div class="eyebrow">Start here</div>
     <h3>Track GPU compute across every major cloud</h3>
-    <p>Enter any GPU machine above — an AWS / Azure / GCP / OCI instance name, a neocloud SKU, or a raw spec like <b>"8x H100"</b> or <b>"A100 80GB"</b>. You'll get the full cross-cloud availability matrix, normalized $/GPU/hr pricing across on-demand, spot and committed tiers, and intelligent recommendations for equivalent machines when your first choice is scarce.</p></div>`;
+    <p>Enter an instance name or GPU spec — like <b>8x H100</b> or <b>A100 80GB</b> — for cross-cloud availability, normalized $/GPU/hr pricing, and equivalent alternatives.</p></div>`;
 }
 /* init */
 if(!INSTANCES.length){ $("#results").innerHTML=`<div class="empty"><h3>Data failed to load</h3><p>data.js could not be read. If opening locally, serve the folder over http (e.g. <span class="mono">npx serve</span>) rather than file://.</p></div>`; }
