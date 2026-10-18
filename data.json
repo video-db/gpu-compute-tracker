@@ -2,8 +2,8 @@
   "meta": {
     "name": "GPU Compute Tracker",
     "version": "1.0.0",
-    "updated": "2026-10-17",
-    "updatedAt": "2026-10-17T06:03:54.275Z",
+    "updated": "2026-10-18",
+    "updatedAt": "2026-10-18T06:03:59.058Z",
     "note": "Indicative public list & street pricing, normalized $/GPU/hr. Auto-refreshed daily via GitHub Actions. Verify with provider before committing.",
     "source": "curated from public provider pricing pages + aggregators"
   },
