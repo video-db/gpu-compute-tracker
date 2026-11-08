@@ -4,7 +4,7 @@ Cross-cloud availability, pricing & intelligent matching for large-scale GPU mac
 
 Type an instance name (`p5.48xlarge`, `ND H100 v5`, `BM.GPU.H100.8`) or a raw spec (`8x H200`, `A100 80GB`, `B200`, `MI300X`). The tracker extracts the underlying GPU, shows every matching machine across providers and regions with on-demand / spot / committed pricing normalized to `$/GPU/hr`, and recommends the closest-matching alternatives — ranked by performance similarity, availability and price — when your first choice is scarce.
 
-Covers **18 providers / 77 machine SKUs / 15 GPU models**: AWS · GCP · Azure · Oracle OCI · CoreWeave · Lambda · Crusoe · Nebius · RunPod · Vast.ai · Together · Fluidstack · Scaleway · OVHcloud · Alibaba · Tencent · E2E · Yotta.
+Covers **19 providers / 83 machine SKUs / 15 GPU models**: AWS · GCP · Azure · Oracle OCI · CoreWeave · Lambda · Crusoe · Nebius · RunPod · Vast.ai · Together · Fluidstack · Scaleway · OVHcloud · Alibaba · Tencent · E2E · Yotta · Runcrate.
 
 Styled with the [VideoDB atomic design system](https://github.com/videodb-social/atomic-design-system).
 
@@ -55,6 +55,8 @@ The GitHub Actions path keeps the front end a dumb static bundle (fast, cacheabl
 The shipped dataset is **curated from public provider pricing pages and aggregators** (AWS/GCP/Azure/OCI docs, provider pricing pages, getdeploying, Vantage, Spheron, etc.). Prices are indicative public list & street rates and fluctuate constantly; entries marked `est` are estimates. **Verify with the provider before committing spend.**
 
 `update-data.mjs` ships with a pluggable `SOURCES` array. To make the daily refresh pull *live* numbers, add a fetcher that returns `{ instanceName: { od, spot, res1 } }` and enable it — the merge step applies it and clears the `est` flag for any value it overwrites. Fetchers are best-effort: if a source is down or changes shape, the curated value is kept and the daily deploy still succeeds.
+
+**Live source: Runcrate.** `update-data.mjs` enables one live source out of the box. [Runcrate](https://www.runcrate.ai/?utm_source=github&utm_medium=pr&utm_campaign=gpu_pricing), an AI cloud, publishes a public JSON feed at `https://www.runcrate.ai/api/gpu-pricing` (no API key). Each daily run reads `min_price_hr` (on-demand `$/GPU/hr`) for the GPU types the dataset models and the feed identifies unambiguously (B200, H200, L40S, L4, A10, RTX 4090), and skips types with `available_options` below 1 because their feed price is stale. H100 and A100 are left out on purpose: the feed does not say SXM vs PCIe. The first run appends one `1x <GPU> (Runcrate)` row per type, and later runs reprice those rows. If the feed is down, the existing values are kept.
 
 ## Local development
 
