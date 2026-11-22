@@ -3,8 +3,8 @@ window.GPU_DATA = {
   "meta": {
     "name": "GPU Compute Tracker",
     "version": "1.0.0",
-    "updated": "2026-11-21",
-    "updatedAt": "2026-11-21T06:03:02.963Z",
+    "updated": "2026-11-22",
+    "updatedAt": "2026-11-22T06:03:03.484Z",
     "note": "Indicative public list & street pricing, normalized $/GPU/hr. Auto-refreshed daily via GitHub Actions. Verify with provider before committing.",
     "source": "curated from public provider pricing pages + aggregators"
   },
